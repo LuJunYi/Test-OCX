@@ -33,6 +33,9 @@
     <ClCompile Include="testocxsheet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="HexToDec.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt">
@@ -64,6 +67,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="testocxsheet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HexToDec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -318,6 +318,7 @@ protected:
 
 public:
 	CLSV2ctl3	*m_pLSV2;
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };
 
 
