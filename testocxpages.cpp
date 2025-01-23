@@ -4,6 +4,10 @@
 #include "stdafx.h"
 #include <afxdlgs.h>
 
+#include <iostream>
+#include <fstream>
+#include <string>
+
 #include "resource.h"
 #include "TestocxPages.h"
 #include "TestocxSheet.h"
@@ -903,7 +907,7 @@ void CTestPlcCommunication::OnTransmit()
 	// TODO:  在此添加控件通知处理程序代码
 	if (m_nRedID == 0)//判断定时器有没有启动
 	{
-		auto m_nRedID = SetTimer(1, 10, NULL);//启动定时器
+		m_nRedID = SetTimer(1, 10, NULL);//启动定时器
 	}
 	else
 	{
@@ -915,6 +919,26 @@ void CTestPlcCommunication::OnTransmit()
 
 	if (true)
 	{
+		char path[MAX_PATH];
+		GetModuleFileName(NULL, path, MAX_PATH);
+		std::string dir(path);
+
+		std::string filename = dir + "\\example.txt";
+
+		// 创建一个输出文件流对象
+		std::ofstream outFile(filename);
+
+		// 检查文件是否成功打开
+		if (!outFile) {
+			std::cerr << "无法打开文件: " << filename << std::endl;
+			return;
+		}
+
+		//// 写入字符串到文件
+		//outFile << "这是第一行文本。" << std::endl;
+		//outFile << "这是第二行文本。" << std::endl;
+		//outFile << "这是第三行文本。" << std::endl;
+
 		CString strValue;
 
 		m_PLC_DWord.GetWindowText(strValue);
@@ -947,6 +971,9 @@ void CTestPlcCommunication::OnTransmit()
 				m_Received_DWord.SetWindowText(data);
 			}
 		}
+
+		//// 关闭文件流
+		//outFile.close();
 
 		//m_pLSV2->TransmitMemBlock(0, 8072, "0 1 0 1 0 1 0");
 
@@ -1644,8 +1671,8 @@ void CTestPlcCommunication::OnTimer(UINT_PTR nIDEvent)
 		{
 			//std::stoi(aHex, 0, 16);
 			//HexToDec::Hex_Conversion_Dec(std::string(p2));
-			double cccccv = double(lVal2) / 10000;
-			m_Received_DWord.SetWindowText(CString(std::to_string(cccccv).c_str()));
+			//double cccccv = double(lVal2) / 10000;
+			m_Received_DWord.SetWindowText(CString(std::to_string(lVal2).c_str()));
 		}
 		else
 		{
