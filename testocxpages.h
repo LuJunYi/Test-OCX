@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <list>
 
 //{{AFX_INCLUDES()
 #include "lsv2ctl3.h"
@@ -321,13 +322,9 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 public:
-	CLSV2ctl3	*m_pLSV2;
+	CLSV2ctl3* m_pLSV2;
 
-	struct  opti_value
-	{
-
-
-	};
+	std::list<std::string> m_listOptiData;
 
 private:
 	std::string getCurTime();

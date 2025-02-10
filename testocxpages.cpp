@@ -933,7 +933,9 @@ void CTestPlcCommunication::OnTransmit()
 			return;
 		}
 
-		m_outFile << "time,Current" << std::endl;
+		m_listOptiData.clear();
+
+		m_outFile << "time,ActBlockNum,Current" << std::endl;
 
 		m_nRedID = SetTimer(1, 5, NULL);//启动定时器
 	}
@@ -941,6 +943,13 @@ void CTestPlcCommunication::OnTransmit()
 	{
 		KillTimer(m_nRedID);//关闭定时器
 		m_nRedID = 0;
+
+		for (std::string value : m_listOptiData)
+		{
+			m_outFile << value << std::endl;
+		}
+
+		m_listOptiData.clear();
 
 		m_outFile.close();// 关闭文件流
 	}
@@ -1055,7 +1064,9 @@ void CTestPlcCommunication::OnTimer(UINT_PTR nIDEvent)
 			//HexToDec::Hex_Conversion_Dec(std::string(p2));
 			double value = double(lVal2);
 
-			m_outFile << getCurTime() << "," << value << std::endl;
+			m_listOptiData.push_back(getCurTime() + "," + std::to_string(value));
+
+			//m_outFile << getCurTime() << "," << value << std::endl;
 
 			//m_Received_DWord.SetWindowText(CString(std::to_string(lVal2).c_str()));
 		}
