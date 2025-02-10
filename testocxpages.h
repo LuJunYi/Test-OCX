@@ -4,6 +4,9 @@
 #ifndef __TESTOCXPAGES_H__
 #define __TESTOCXPAGES_H__
 
+#include <iostream>
+#include <fstream>
+#include <string>
 
 //{{AFX_INCLUDES()
 #include "lsv2ctl3.h"
@@ -313,12 +316,25 @@ protected:
 	afx_msg void OnChangePlcString();
 	afx_msg void OnTransmitString();
 	afx_msg void OnChangePlcDword();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 
 public:
 	CLSV2ctl3	*m_pLSV2;
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
+
+	struct  opti_value
+	{
+
+
+	};
+
+private:
+	std::string getCurTime();
+
+private:
+	UINT_PTR m_nRedID = 0;
+	std::ofstream m_outFile;
 };
 
 

@@ -4,10 +4,6 @@
 #include "stdafx.h"
 #include <afxdlgs.h>
 
-#include <iostream>
-#include <fstream>
-#include <string>
-
 #include "resource.h"
 #include "TestocxPages.h"
 #include "TestocxSheet.h"
@@ -44,6 +40,7 @@ IMPLEMENT_DYNCREATE(CTestBackup, CPropertyPage)
 CTestConnection::CTestConnection() : CPropertyPage(CTestConnection::IDD)
 {
 	//{{AFX_DATA_INIT(CTestConnection)
+	//m_Address = _T("10.10.11.70");
 	m_Address = _T("localhost");
 	m_ProtocolFile = _T("c:\\temp\\testocx.txt -v2");
 	m_nLanguage = 0;
@@ -875,8 +872,9 @@ BEGIN_MESSAGE_MAP(CTestPlcCommunication, CPropertyPage)
 	ON_EN_CHANGE(IDC_PLC_STRING, OnChangePlcString)
 	ON_BN_CLICKED(IDC_TRANSMIT_STRING, OnTransmitString)
 	ON_EN_CHANGE(IDC_PLC_DWORD, OnChangePlcDword)
-	//}}AFX_MSG_MAP
 	ON_WM_TIMER()
+	//}}AFX_MSG_MAP
+
 END_MESSAGE_MAP()
 
 
@@ -900,85 +898,98 @@ void CTestPlcCommunication::OnChangePlcString()
 	m_Transmit_String.EnableWindow(!Str.IsEmpty());
 }
 
-UINT_PTR m_nRedID = 0;
+std::string CTestPlcCommunication::getCurTime()
+{
+	CTime time = CTime::GetCurrentTime();
+	CString strTime = time.Format(_T("%Y-%m-%d_%H:%M:%S"));
+
+	CT2CA pszConvertedAnsiString(strTime);
+	return std::string(pszConvertedAnsiString);
+}
 
 void CTestPlcCommunication::OnTransmit()
 {
-	// TODO:  在此添加控件通知处理程序代码
 	if (m_nRedID == 0)//判断定时器有没有启动
 	{
-		m_nRedID = SetTimer(1, 10, NULL);//启动定时器
+		char path[MAX_PATH];
+		GetModuleFileName(NULL, path, MAX_PATH);
+
+		// 移除文件名，仅保留目录部分
+		std::string directory(path);
+		int pos = directory.find_last_of('\\'); // 查找最后一个 '\'
+		if (pos != -1) {
+			directory = directory.substr(0, pos); // 截取目录部分
+		}
+
+		std::string dir(path);
+		std::string filename = directory +  "\\opti_current.csv";
+
+		// 创建一个输出文件流对象
+		m_outFile = std::ofstream(filename);
+		// 检查文件是否成功打开
+		if (m_outFile.fail())
+		{
+			std::cerr << "无法打开文件: " << filename << std::endl;
+			return;
+		}
+
+		m_outFile << "time,Current" << std::endl;
+
+		m_nRedID = SetTimer(1, 5, NULL);//启动定时器
 	}
 	else
 	{
 		KillTimer(m_nRedID);//关闭定时器
 		m_nRedID = 0;
-		//::ShowWindow(::GetDlgItem(m_hWnd, IDC_RED), SW_HIDE);
+
+		m_outFile.close();// 关闭文件流
 	}
 	return;
 
-	if (true)
+	if (false)
 	{
-		char path[MAX_PATH];
-		GetModuleFileName(NULL, path, MAX_PATH);
-		std::string dir(path);
-
-		std::string filename = dir + "\\example.txt";
-
-		// 创建一个输出文件流对象
-		std::ofstream outFile(filename);
-
-		// 检查文件是否成功打开
-		if (!outFile) {
-			std::cerr << "无法打开文件: " << filename << std::endl;
-			return;
-		}
-
 		//// 写入字符串到文件
 		//outFile << "这是第一行文本。" << std::endl;
 		//outFile << "这是第二行文本。" << std::endl;
 		//outFile << "这是第三行文本。" << std::endl;
 
-		CString strValue;
+		//CString strValue;
 
-		m_PLC_DWord.GetWindowText(strValue);
-		char* p = strValue.GetBuffer(80);
+		//m_PLC_DWord.GetWindowText(strValue);
+		//char* p = strValue.GetBuffer(80);
 
-		long lVal;
-		if (sscanf(p, "0x%X", &lVal) == 1 ||
-			sscanf(p, "$%X", &lVal) == 1 ||
-			sscanf(p, "%ld", &lVal) == 1)
-		{
+		//long lVal;
+		//if (sscanf(p, "0x%X", &lVal) == 1 ||
+		//	sscanf(p, "$%X", &lVal) == 1 ||
+		//	sscanf(p, "%ld", &lVal) == 1)
+		//{
 
-			CString data = m_pLSV2->ReceiveMemBlock(7, lVal, 1);
-			m_pLSV2->SetCaption(data);
-			data = "$" + data;
+		//	CString data = m_pLSV2->ReceiveMemBlock(7, lVal, 1);
+		//	m_pLSV2->SetCaption(data);
+		//	data = "$" + data;
 
-			char* p2 = data.GetBuffer(80);
+		//	char* p2 = data.GetBuffer(80);
 
-			long lVal2;
-			if (sscanf(p2, "0x%X", &lVal2) == 1 ||
-				sscanf(p2, "$%X", &lVal2) == 1 ||
-				sscanf(p2, "%ld", &lVal2) == 1)
-			{
-				//std::stoi(aHex, 0, 16);
-				//HexToDec::Hex_Conversion_Dec(std::string(p2));
-				double cccccv = double(lVal2) / 10000;
-				m_Received_DWord.SetWindowText(CString(std::to_string(cccccv).c_str()));
-			}
-			else
-			{
-				m_Received_DWord.SetWindowText(data);
-			}
-		}
+		//	long lVal2;
+		//	if (sscanf(p2, "0x%X", &lVal2) == 1 ||
+		//		sscanf(p2, "$%X", &lVal2) == 1 ||
+		//		sscanf(p2, "%ld", &lVal2) == 1)
+		//	{
+		//		//std::stoi(aHex, 0, 16);
+		//		//HexToDec::Hex_Conversion_Dec(std::string(p2));
+		//		double cccccv = double(lVal2) / 10000;
+		//		m_Received_DWord.SetWindowText(CString(std::to_string(cccccv).c_str()));
+		//	}
+		//	else
+		//	{
+		//		m_Received_DWord.SetWindowText(data);
+		//	}
+		//}
 
-		//// 关闭文件流
-		//outFile.close();
+
 
 		//m_pLSV2->TransmitMemBlock(0, 8072, "0 1 0 1 0 1 0");
-
 		//m_pLSV2->SetCaption (m_pLSV2->ReceiveMemBlock(0, 8072, 7));
-
 		//m_Connect.EnableWindow(FALSE);
 		//m_Start.EnableWindow();
 	}
@@ -1012,6 +1023,49 @@ void CTestPlcCommunication::OnTransmitString()
 	BOOL ok = m_pLSV2->TransmitPlcString(Str);
 	if (!ok)
 		MessageBeep(0xFFFFFFFF);
+}
+
+
+void CTestPlcCommunication::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	CString strValue;
+
+	m_PLC_DWord.GetWindowText(strValue);
+	char* p = strValue.GetBuffer(80);
+
+	long lVal;
+	if (sscanf(p, "0x%X", &lVal) == 1 ||
+		sscanf(p, "$%X", &lVal) == 1 ||
+		sscanf(p, "%ld", &lVal) == 1)
+	{
+
+		CString data = m_pLSV2->ReceiveMemBlock(7, lVal, 1);
+		m_pLSV2->SetCaption(data);
+		data = "$" + data;
+
+		char* p2 = data.GetBuffer(80);
+
+		long lVal2;
+		if (sscanf(p2, "0x%X", &lVal2) == 1 ||
+			sscanf(p2, "$%X", &lVal2) == 1 ||
+			sscanf(p2, "%ld", &lVal2) == 1)
+		{
+			//std::stoi(aHex, 0, 16);
+			//HexToDec::Hex_Conversion_Dec(std::string(p2));
+			double value = double(lVal2);
+
+			m_outFile << getCurTime() << "," << value << std::endl;
+
+			//m_Received_DWord.SetWindowText(CString(std::to_string(lVal2).c_str()));
+		}
+		/*else
+		{
+			m_Received_DWord.SetWindowText(data);
+		}*/
+	}
+
+	CPropertyPage::OnTimer(nIDEvent);
 }
 
 
@@ -1644,41 +1698,3 @@ void CTestBackup::OnChangeBckfile()
 	}
 }
 
-void CTestPlcCommunication::OnTimer(UINT_PTR nIDEvent)
-{
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	CString strValue;
-
-	m_PLC_DWord.GetWindowText(strValue);
-	char* p = strValue.GetBuffer(80);
-
-	long lVal;
-	if (sscanf(p, "0x%X", &lVal) == 1 ||
-		sscanf(p, "$%X", &lVal) == 1 ||
-		sscanf(p, "%ld", &lVal) == 1)
-	{
-
-		CString data = m_pLSV2->ReceiveMemBlock(7, lVal, 1);
-		m_pLSV2->SetCaption(data);
-		data = "$" + data;
-
-		char* p2 = data.GetBuffer(80);
-
-		long lVal2;
-		if (sscanf(p2, "0x%X", &lVal2) == 1 ||
-			sscanf(p2, "$%X", &lVal2) == 1 ||
-			sscanf(p2, "%ld", &lVal2) == 1)
-		{
-			//std::stoi(aHex, 0, 16);
-			//HexToDec::Hex_Conversion_Dec(std::string(p2));
-			//double cccccv = double(lVal2) / 10000;
-			m_Received_DWord.SetWindowText(CString(std::to_string(lVal2).c_str()));
-		}
-		else
-		{
-			m_Received_DWord.SetWindowText(data);
-		}
-	}
-
-	CPropertyPage::OnTimer(nIDEvent);
-}
