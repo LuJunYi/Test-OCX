@@ -236,7 +236,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="font.cpp" />
-    <ClCompile Include="HexToDec.cpp" />
     <ClCompile Include="lsv2ctl3.cpp" />
     <ClCompile Include="StdAfx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -256,7 +255,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="font.h" />
-    <ClInclude Include="HexToDec.h" />
     <ClInclude Include="lsv2ctl3.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />

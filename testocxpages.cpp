@@ -8,7 +8,7 @@
 #include "TestocxPages.h"
 #include "TestocxSheet.h"
 
-#include "HexToDec.h"
+//#include "HexToDec.h"
 
 #define WM_DISCONNECT WM_USER+33
 
@@ -40,8 +40,8 @@ IMPLEMENT_DYNCREATE(CTestBackup, CPropertyPage)
 CTestConnection::CTestConnection() : CPropertyPage(CTestConnection::IDD)
 {
 	//{{AFX_DATA_INIT(CTestConnection)
-	//m_Address = _T("10.10.11.70");
-	m_Address = _T("localhost");
+	m_Address = _T("10.10.11.70");
+	//m_Address = _T("localhost");
 	m_ProtocolFile = _T("c:\\temp\\testocx.txt -v2");
 	m_nLanguage = 0;
 	//}}AFX_DATA_INIT
@@ -872,10 +872,16 @@ BEGIN_MESSAGE_MAP(CTestPlcCommunication, CPropertyPage)
 	ON_EN_CHANGE(IDC_PLC_STRING, OnChangePlcString)
 	ON_BN_CLICKED(IDC_TRANSMIT_STRING, OnTransmitString)
 	ON_EN_CHANGE(IDC_PLC_DWORD, OnChangePlcDword)
-	ON_WM_TIMER()
+	//ON_WM_TIMER()
 	//}}AFX_MSG_MAP
 
 END_MESSAGE_MAP()
+
+#include <windows.h>
+#include <mmsystem.h>
+#include <iostream>
+
+#pragma comment(lib, "winmm.lib")
 
 
 void CTestPlcCommunication::OnClear()
@@ -907,10 +913,88 @@ std::string CTestPlcCommunication::getCurTime()
 	return std::string(pszConvertedAnsiString);
 }
 
+//void CTestPlcCommunication::TimerProc(UINT uID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2)
+//{
+//	//std::cout << "高精度定时器触发！" << std::endl;
+//	CString strValue;
+//
+//	m_PLC_DWord.GetWindowText(strValue);
+//	char* p = strValue.GetBuffer(80);
+//
+//	long lVal;
+//	if (sscanf(p, "0x%X", &lVal) == 1 ||
+//		sscanf(p, "$%X", &lVal) == 1 ||
+//		sscanf(p, "%ld", &lVal) == 1)
+//	{
+//		// 记录起始时间点
+//		//auto start = std::chrono::high_resolution_clock::now();
+//		CString data = m_pLSV2->ReceiveMemBlock(7, lVal, 1);
+//		// 记录结束时间点
+//		//auto end = std::chrono::high_resolution_clock::now();
+//
+//		// 计算耗时（以毫秒为单位）
+//		//std::chrono::duration<double, std::milli> duration = end - start;
+//
+//		//double ddd = duration.count();
+//
+//		//std::cout << "函数执行时间: " << ddd << " 毫秒" << std::endl;
+//
+//		m_pLSV2->SetCaption(data);
+//
+//		data = "$" + data;
+//		char* p2 = data.GetBuffer(80);
+//
+//		long lVal2;
+//		if (sscanf(p2, "0x%X", &lVal2) == 1 ||
+//			sscanf(p2, "$%X", &lVal2) == 1 ||
+//			sscanf(p2, "%ld", &lVal2) == 1)
+//		{
+//			//double value = double(lVal2);
+//			m_listOptiData.push_back(getCurTime() + "," + std::to_string(lVal2));
+//			//m_Received_DWord.SetWindowText(CString(std::to_string(lVal2).c_str()));
+//		}
+//	}
+//}
+
+void CALLBACK TimerProc(UINT uID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2)
+{
+	CTestPlcCommunication* pThis = reinterpret_cast<CTestPlcCommunication*>(dwUser);
+	if (pThis)
+	{
+		pThis->OnTimer();
+	}
+}
+
 void CTestPlcCommunication::OnTransmit()
 {
 	if (m_nRedID == 0)//判断定时器有没有启动
 	{
+		m_listOptiData.clear();
+		//ActBlockNum,
+		m_outFile << "time,Current" << std::endl;
+
+		timeBeginPeriod(1); // 设置最小时间间隔为 1ms
+		//m_nRedID = SetTimer(1, 2, NULL);//启动定时器
+        
+
+        m_nRedID = timeSetEvent(5, 1, TimerProc, reinterpret_cast<DWORD_PTR>(this), TIME_PERIODIC); // 5ms 定时
+
+		if (m_nRedID == 0) 
+		{
+			timeEndPeriod(1); // 还原系统时间精度
+			std::cerr << "定时器创建失败！" << std::endl;
+			return;
+		}
+	}
+	else
+	{
+		//KillTimer(m_nRedID);//关闭定时器
+
+		timeKillEvent(m_nRedID); // 关闭定时器
+		timeEndPeriod(1); // 还原系统时间精度
+
+		m_nRedID = 0;
+
 		char path[MAX_PATH];
 		GetModuleFileName(NULL, path, MAX_PATH);
 
@@ -922,7 +1006,7 @@ void CTestPlcCommunication::OnTransmit()
 		}
 
 		std::string dir(path);
-		std::string filename = directory +  "\\opti_current.csv";
+		std::string filename = directory + "\\opti_current.csv";
 
 		// 创建一个输出文件流对象
 		m_outFile = std::ofstream(filename);
@@ -933,17 +1017,6 @@ void CTestPlcCommunication::OnTransmit()
 			return;
 		}
 
-		m_listOptiData.clear();
-
-		m_outFile << "time,ActBlockNum,Current" << std::endl;
-
-		m_nRedID = SetTimer(1, 5, NULL);//启动定时器
-	}
-	else
-	{
-		KillTimer(m_nRedID);//关闭定时器
-		m_nRedID = 0;
-
 		for (std::string value : m_listOptiData)
 		{
 			m_outFile << value << std::endl;
@@ -953,8 +1026,9 @@ void CTestPlcCommunication::OnTransmit()
 
 		m_outFile.close();// 关闭文件流
 	}
-	return;
+	/*return;*/
 
+	/*
 	if (false)
 	{
 		//// 写入字符串到文件
@@ -1021,7 +1095,7 @@ void CTestPlcCommunication::OnTransmit()
 		else
 			MessageBox("Invalid format for DWORD. Use 0xXXXXXXXX or decimal number");
 	}
-
+	*/
 }
 
 void CTestPlcCommunication::OnTransmitString()
@@ -1033,9 +1107,9 @@ void CTestPlcCommunication::OnTransmitString()
 	if (!ok)
 		MessageBeep(0xFFFFFFFF);
 }
+#include <chrono>
 
-
-void CTestPlcCommunication::OnTimer(UINT_PTR nIDEvent)
+void CTestPlcCommunication::OnTimer()
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	CString strValue;
@@ -1048,11 +1122,22 @@ void CTestPlcCommunication::OnTimer(UINT_PTR nIDEvent)
 		sscanf(p, "$%X", &lVal) == 1 ||
 		sscanf(p, "%ld", &lVal) == 1)
 	{
-
+		// 记录起始时间点
+		//auto start = std::chrono::high_resolution_clock::now();
 		CString data = m_pLSV2->ReceiveMemBlock(7, lVal, 1);
-		m_pLSV2->SetCaption(data);
-		data = "$" + data;
+		// 记录结束时间点
+		//auto end = std::chrono::high_resolution_clock::now();
 
+		// 计算耗时（以毫秒为单位）
+		//std::chrono::duration<double, std::milli> duration = end - start;
+
+		//double ddd = duration.count();
+
+		//std::cout << "函数执行时间: " << ddd << " 毫秒" << std::endl;
+
+		m_pLSV2->SetCaption(data);
+
+		data = "$" + data;
 		char* p2 = data.GetBuffer(80);
 
 		long lVal2;
@@ -1060,23 +1145,13 @@ void CTestPlcCommunication::OnTimer(UINT_PTR nIDEvent)
 			sscanf(p2, "$%X", &lVal2) == 1 ||
 			sscanf(p2, "%ld", &lVal2) == 1)
 		{
-			//std::stoi(aHex, 0, 16);
-			//HexToDec::Hex_Conversion_Dec(std::string(p2));
-			double value = double(lVal2);
-
-			m_listOptiData.push_back(getCurTime() + "," + std::to_string(value));
-
-			//m_outFile << getCurTime() << "," << value << std::endl;
-
+			//double value = double(lVal2);
+			m_listOptiData.push_back(getCurTime() + "," + std::to_string(lVal2));
 			//m_Received_DWord.SetWindowText(CString(std::to_string(lVal2).c_str()));
 		}
-		/*else
-		{
-			m_Received_DWord.SetWindowText(data);
-		}*/
 	}
 
-	CPropertyPage::OnTimer(nIDEvent);
+	//CPropertyPage::OnTimer(nIDEvent);
 }
 
 

@@ -317,21 +317,25 @@ protected:
 	afx_msg void OnChangePlcString();
 	afx_msg void OnTransmitString();
 	afx_msg void OnChangePlcDword();
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	//afx_msg void OnTimer(UINT_PTR nIDEvent);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 
 public:
 	CLSV2ctl3* m_pLSV2;
 
-	std::list<std::string> m_listOptiData;
+
+	void OnTimer();
 
 private:
 	std::string getCurTime();
 
+
 private:
-	UINT_PTR m_nRedID = 0;
+	//UINT_PTR m_nRedID = 0;
+	UINT  m_nRedID = 0;
 	std::ofstream m_outFile;
+	std::list<std::string> m_listOptiData;
 };
 
 
